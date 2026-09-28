@@ -1,1 +1,1 @@
-# -stack.github.io
+# ariasmode6-stack.github.io
