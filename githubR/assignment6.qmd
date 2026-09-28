@@ -1,0 +1,112 @@
+---
+title: "assignemt 6"
+format:
+  html:
+    output-file: "hw6.html"
+---
+
+```{r}
+#| warning: false
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(reactable)
+library(plotly)
+library(crosstalk)
+library(readr)
+```
+
+
+```{r}
+df<-read.csv("http://manctsui.github.io/datasets/timesData.csv")|>
+  mutate(world_rank=parse_number(world_rank))
+```
+
+$$
+\textbf{Problem 1A}
+$$
+
+```{r}
+p1a<-df|>
+  count(country)|>
+  arrange(desc(n))|>
+  select(Country=country,University_Count=n)|>
+  head(3)
+
+  reactable(p1a)
+```
+ 
+$$
+\textbf{Problem 1B}
+$$ 
+```{r}
+plot1b<-ggplot(p1a,mapping=aes(x=Country,y=University_Count) ) + geom_col() +
+  labs(title = "Top 3 Countries in ranking with Most Universities", x= "Countries",y= "Number")
+
+ggplotly(plot1b)
+```
+ 
+ 
+$$
+\textbf{Problem 2A}
+$$
+
+
+```{r}
+
+df|>
+  filter(world_rank<51,year==2011)|>
+  select(Rank=world_rank,University=university_name)|>
+  arrange()|>
+  reactable()
+
+```
+
+$$
+\textbf{Problem 2B}
+$$
+No since schools differ year to year when it comes to ranking. Cases show up where some schools are tied in rankings. (Don't know if this is in reference to 2A or 1A)
+
+
+$$
+\textbf{Problem 2C}
+$$
+
+
+```{r}
+p2c<- df|>
+  filter(world_rank<51,year==2011)|>
+  distinct(University=world_rank,Rank=university_name)
+
+sd<-SharedData$new(p2c,key=~Rank)
+filter_checkbox("Univerity_checkbox","University",sd,~University)
+reactable(sd, defaultPageSize = 5)
+```
+
+
+
+$$
+\textbf{Problem 3}
+$$
+
+```{r}
+p3<-df|>
+  filter(year==2016,!is.na(num_students),!is.na(student_staff_ratio),!is.na(teaching))
+sp3<-SharedData$new(p3)
+
+plot3a<- plot_ly(sp3,x=~num_students,y=~student_staff_ratio,type="scatter",mode='markers')|>
+layout(
+  title="Number of Students vs. Student-Staff Ratio",
+  xaxis=list(title="Number of Students"),
+  yaxis=list(title="Student-Staff Ratio")
+)
+plot3b<- plot_ly(p3,x=~num_students,y=~student_staff_ratio,type="scatter",mode='markers')|>
+layout(
+  title="Number of Students vs. Student-Staff Ratio",
+  xaxis=list(title="Student-Staff Ratio"),
+  yaxis=list(title="Teaching Score")
+)
+
+bscols(plot3a,plot3b)
+
+```
