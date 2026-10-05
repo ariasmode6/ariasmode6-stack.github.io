@@ -1,0 +1,151 @@
+---
+title: "Assignment 7"
+format: html
+---
+
+```{r}
+#| warning: false
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(reactable)
+library(plotly)
+library(crosstalk)
+library(readr)
+```
+
+```{r}
+df <- data.frame(
+x = c(5, 1, 4, NA, NA, NA, 2, 1),
+y = c(5, NA, 3, 2, 5, NA, 2, 1),
+z = c(1, 4, 2, 5, 2, NA, 5, 4),
+t = c(4, 2, NA, 1, 5, 2, 3, 3)
+)
+```
+
+$$
+\textbf{Problem 1}
+$$
+
+```{r}
+yx<-cor(df$y,df$x,use = "pairwise.complete.obs")
+yz<-cor(df$y,df$z,use = "pairwise.complete.obs")
+yt<-cor(df$y,df$t,use = "pairwise.complete.obs")
+```
+
+Of the four other users "User 4" is like minded to User 2. User 1 has a higher correlation but it cannot be used since Movie 6 has no input.
+
+```{r}
+mu2<-mean(na.omit(df$y))
+mu4<-mean(na.omit(df$t))
+```
+
+Predicting User 2 preference for Movie 6. We get the following
+
+```{r}
+inp26 = mu4 + (yt/yt) * (2 - mu2)
+inp26
+```
+
+$$
+\textbf{Problem 2}
+$$
+
+```{r}
+dft <- as.data.frame(t(df))
+
+for (i in dft){
+  corm<-cor(dft$V1,i,method="pearson",use="pairwise.complete.obs")
+  print(corm)
+}
+
+```
+
+We have Movie 5 with a correlation of 0.970.
+
+$$
+\textbf{Problem 3A}
+$$
+
+```{r}
+df3<-read.csv("http://manctsui.github.io/datasets/countries.csv")
+reactable(df3)
+
+df_clean<-df3|>
+  group_by(Region)|>
+  mutate(Agriculture=ifelse(is.na(Agriculture), mean(Agriculture,na.rm=TRUE),Agriculture))|>
+  ungroup()
+reactable(df_clean)
+```
+
+$$
+\textbf{Problem 3B}
+$$
+
+```{r}
+dfp3b<-df3|>
+  filter(is.na(df3$Agriculture))
+
+
+reactable(dfp3b)
+
+sum(dfp3b$Region=="WESTERN EUROPE")
+sum(dfp3b$Region=="SUB-SAHARAN AFRICA")
+sum(dfp3b$Region=="OCEANIA")
+sum(dfp3b$Region=="NORTHERN AMERICA")
+sum(dfp3b$Region=="LATIN AMER. & CARIB")
+sum(dfp3b$Region=="NORTHERN AFRICA")
+```
+
+In total we filled 15 NA
+
+$$
+\textbf{Problem 4}
+$$
+
+```{r}
+dfp4 <- data.frame(
+temp = c(79, 74, 73, 76, 82, 72, 71, 79, 83, 70, 73, 75, 77),
+chirps = c(44, 40, 38, 43, 48, 37, 34, 45, 51, 32, 35, 42, 43)
+)
+lm(dfp4$temp~dfp4$chirps)
+```
+
+```{r}
+cor(dfp4$temp,dfp4$chirps) #correlation of temp and chirps
+```
+
+Since the correlation is 0.971 which is strong. A regression model can be used.
+
+```{r}
+mutemp<-mean(dfp4$temp) #output is 75.69
+sigtemp<-sd(dfp4$temp) #output is 4.11
+much<-mean(dfp4$chirps) #output is 40.92
+sigch<-sd(dfp4$chirps) #output is 5.59
+```
+
+$$
+\text{With the following information we can formulate the linear regression model.}
+$$ 
+
+$$
+\begin{align}
+\hat{b}=\frac{S_{xy}}{S_{x^2}}\ = r_{xy}\frac{s_y}{s_x}\  \text{ and } \hat{a} = \bar{y}-\hat{b}\bar{x} 
+\end{align}
+$$
+
+$$ 
+\begin{align}
+\hat{b}=(0.971)*\frac{4.11}{5.59}\ = 0.713
+\\
+\hat{a} = \bar{y} - \hat{b}\bar{x}= 75.69 - (0.713)(40.92) = 46.51
+\end{align}
+$$
+
+
+$$
+\text{Therefore} \ \hat{b} \ \text{is our coefficient and} \ \hat{a} \ \text{is our y-slope}. \\ \\ \text{Our model matches that of the output from R.} \\ 
+Temp = Chirp * (0.713) + 46.51
+$$
+
+
