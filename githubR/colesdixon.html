@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Predicting Outcomes in La Liga 25/26</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="colesdixon_files/libs/clipboard/clipboard.min.js"></script>
+<script src="colesdixon_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="colesdixon_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="colesdixon_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="colesdixon_files/libs/quarto-html/popper.min.js"></script>
+<script src="colesdixon_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="colesdixon_files/libs/quarto-html/anchor.min.js"></script>
+<link href="colesdixon_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="colesdixon_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="colesdixon_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="colesdixon_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="colesdixon_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicting Outcomes in La Liga 25/26</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reactable)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plotly)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Here we have a dataset from the Spanish soccer league La Liga. It is the 25/26 season and it includes information in regards to match outcome. Our overall goal is to predict match outcomes. Therefore useful information for us will be “Date”, HomeTeam”, “AwayTeam”,<br>
+FTHG = number of goals scored by home team at full time, FTAG = number of goals scored by away team at full time, and FTR = Full time result (H=Home won, A= Away won, D= tie )</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df<span class="ot">&lt;-</span><span class="fu">read.csv</span>(<span class="st">"~/Desktop/R/season-2526.csv"</span>)<span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Date,HomeTeam,AwayTeam,FTHG,FTAG,FTR)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Date   HomeTeam  AwayTeam FTHG FTAG FTR
+1 2025-08-15     Girona Vallecano    1    3   A
+2 2025-08-15 Villarreal    Oviedo    2    0   H
+3 2025-08-16   Mallorca Barcelona    0    3   A
+4 2025-08-16     Alaves   Levante    2    1   H
+5 2025-08-16   Valencia  Sociedad    1    1   D
+6 2025-08-17      Celta    Getafe    0    2   A</code></pre>
+</div>
+</div>
+<p>We can create a frequency plot of Home and Away goals to visualize our data.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>levels_goals <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span><span class="fu">max</span>(df<span class="sc">$</span>FTHG, df<span class="sc">$</span>FTAG)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>freq <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Goals =</span> levels_goals,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Home  =</span> <span class="fu">as.vector</span>(<span class="fu">table</span>(<span class="fu">factor</span>(df<span class="sc">$</span>FTHG, <span class="at">levels =</span> levels_goals))),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Away  =</span> <span class="fu">as.vector</span>(<span class="fu">table</span>(<span class="fu">factor</span>(df<span class="sc">$</span>FTAG, <span class="at">levels =</span> levels_goals)))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>freq_long <span class="ot">&lt;-</span> <span class="fu">pivot_longer</span>(freq[, <span class="fu">c</span>(<span class="st">"Goals"</span>, <span class="st">"Home"</span>, <span class="st">"Away"</span>)],</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                          <span class="at">cols =</span> <span class="fu">c</span>(Home, Away),</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                          <span class="at">names_to =</span> <span class="st">"Side"</span>, <span class="at">values_to =</span> <span class="st">"Matches"</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(freq_long, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(Goals), <span class="at">y =</span> Matches, <span class="at">fill =</span> Side)) <span class="sc">+</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Goals scored"</span>, <span class="at">y =</span> <span class="st">"Number of matches"</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Full-time goals: Home vs Away"</span>) <span class="sc">+</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="colesdixon_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Looking at the frequency plot it appears to be Poisson-shaped for both Home and Away goals. This makes sense since home and away goals are typically modeled after a Poisson Distribution. Next, since we want to predict the outcome of a soccer match a way of doing this is by computing the expected home and away goals for each team. This can be done by using a Poisson Regression Model.</p>
+<p><span class="math display">\[
+\ln(\lambda) =b_0+b_1x_1+b_2x_2+...
+\]</span> Once the coefficients are found we can then compute predicted values. <span class="math display">\[
+\lambda=e^{b_0 + b_1x_1+b_2x_2+...}=e^{b_0}e^{b_1x_1}e^{b_2x_2}...
+\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dfnew<span class="ot">&lt;-</span>df[<span class="dv">1</span><span class="sc">:</span><span class="dv">370</span>,]<span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(HomeTeam,AwayTeam,FTHG,FTAG)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(dfnew)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>poisdata<span class="ot">&lt;-</span><span class="fu">rbind</span>(<span class="fu">data.frame</span>(<span class="at">Home=</span><span class="dv">1</span>,<span class="at">Team =</span> dfnew<span class="sc">$</span>HomeTeam,<span class="at">Opponent =</span> dfnew<span class="sc">$</span>AwayTeam,<span class="at">Goals =</span> dfnew<span class="sc">$</span>FTHG),<span class="fu">data.frame</span>(<span class="at">Home=</span><span class="dv">0</span>,<span class="at">Team=</span> dfnew<span class="sc">$</span>AwayTeam,<span class="at">Opponent=</span> dfnew<span class="sc">$</span>HomeTeam,<span class="at">Goals=</span> dfnew<span class="sc">$</span>FTAG))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>pois.mod<span class="ot">&lt;-</span><span class="fu">glm</span>(Goals<span class="sc">~</span>Home<span class="sc">+</span>Team<span class="sc">+</span>Opponent,<span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link=</span>log),<span class="at">data=</span>poisdata)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>In the code above, the last 10 matches were excluded from the data for testing predictions on them. From the Poisson Regression Model we can compute the expected goals for each team of a match. This can be done using the ‘fitted()’ function.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>exp_goal<span class="ot">&lt;-</span><span class="fu">fitted</span>(pois.mod)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>exp_data<span class="ot">&lt;-</span><span class="fu">cbind</span>(poisdata,exp_goal)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(exp_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Home       Team  Opponent Goals  exp_goal
+1    1     Girona Vallecano     1 1.0338479
+2    1 Villarreal    Oviedo     2 2.3442911
+3    1   Mallorca Barcelona     0 0.9779134
+4    1     Alaves   Levante     2 1.6195353
+5    1   Valencia  Sociedad     1 1.6478703
+6    1      Celta    Getafe     0 1.2263383</code></pre>
+</div>
+</div>
+<p>After computing the expected goals our next step would be to predict the outcome of a match. Poisson Regression Model only gives us the expected goals a team will score in a match so we need a way of obtaining the probability of a scoreline in a match. This can be done via a Probability Matrix, where each entry is the probability of some given scoreline. This is done by multiplying the home and away goal probabilities. This assumes that home and away goals are independent. Dixon and Coles found under the assumption of independence that the probabilities of low scorelines (0-0,1-0,0-1, and 1-1) were misestimated. So they proposed the following:</p>
+<p><span class="math display">\[
+P(X_{i,j}=x,Y_{i,j}=y)= \tau_{\lambda,\mu}(x,y) \frac{e^{-\lambda}\lambda^x}{x!}\frac{e^{-\mu}\mu^y}{y!}\\
+\]</span> <span class="math display">\[
+\text{where  } \tau_{\lambda,\mu}(x,y)=\begin{cases}  1-\lambda\mu\rho &amp; \text{if } x=y=0,\\
+1+\lambda\rho &amp; \text{if } x=0,y=1,\\
+1+\mu\rho &amp; \text{if } x=1,y=0,\\
+1-\rho &amp; \text{if } x=y=1,\\
+1 &amp; \text{otherwise}
+\end{cases}
+\]</span> <span class="math inline">\(\lambda\)</span> is the home team’s expected goals, <span class="math inline">\(\mu\)</span> is the away team’s expected goals, <span class="math inline">\(\rho\)</span> controls how strongly the low scorelines are adjusted. The tau function is highly dependent on <span class="math inline">\(\rho\)</span>, so when <span class="math inline">\(\rho=0\)</span> then <span class="math inline">\(\tau=1\)</span>. We then get back to the basic Poisson model. Let us define the Tau Function and two vectors for Expected home goals and away goals.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>home_exp<span class="ot">&lt;-</span>exp_goal[<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dfnew)]</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>away_exp<span class="ot">&lt;-</span>exp_goal[(<span class="fu">nrow</span>(dfnew)<span class="sc">+</span><span class="dv">1</span>)<span class="sc">:</span>(<span class="fu">nrow</span>(dfnew)<span class="sc">*</span><span class="dv">2</span>)]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>tau <span class="ot">&lt;-</span> <span class="fu">Vectorize</span>(<span class="cf">function</span>(x, y, lambda, mu, rho){</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">0</span>){<span class="fu">return</span>(<span class="dv">1</span> <span class="sc">-</span> (lambda<span class="sc">*</span>mu<span class="sc">*</span>rho))</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">1</span>){<span class="fu">return</span>(<span class="dv">1</span> <span class="sc">+</span> (lambda<span class="sc">*</span>rho))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">0</span>){<span class="fu">return</span>(<span class="dv">1</span> <span class="sc">+</span> (mu<span class="sc">*</span>rho))</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">1</span>){<span class="fu">return</span>(<span class="dv">1</span> <span class="sc">-</span> rho)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {<span class="fu">return</span>(<span class="dv">1</span>)}</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(away_exp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      371       372       373       374       375       376 
+0.9373686 0.5483698 2.3583790 1.1237560 1.4580894 0.6719257 </code></pre>
+</div>
+</div>
+<p>Since we obtained the expected goals via Poisson Regression Model we only have to find the value for rho which maximizes the log-likelihood. This can be done using Optimization Techniques. Our objective function is: <span class="math display">\[
+l(\rho) = \sum_{i=1}^{370}  [\ln(\tau(x_i,y_i,\lambda_i,\mu_i,\rho) +  \ln(\frac{e^{-\lambda_i}\lambda_i^{x_i}}{x_i!})+\ln(\frac{e^{-\mu_i}\mu_i^{y_i}}{y_i!})]
+\]</span> Next we take the derivative of the objective function with respect to <span class="math inline">\(\rho\)</span>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dtau <span class="ot">&lt;-</span> <span class="fu">Vectorize</span>(<span class="cf">function</span>(x, y, lambda, mu, rho){</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">0</span>){<span class="fu">return</span>(<span class="sc">-</span>(lambda<span class="sc">*</span>mu)<span class="sc">/</span>(<span class="dv">1</span> <span class="sc">-</span> (lambda<span class="sc">*</span>mu<span class="sc">*</span>rho)))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">1</span>){<span class="fu">return</span>(lambda<span class="sc">/</span>(<span class="dv">1</span> <span class="sc">+</span> (lambda<span class="sc">*</span>rho)))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">0</span>){<span class="fu">return</span>(mu<span class="sc">/</span>(<span class="dv">1</span> <span class="sc">+</span> (mu<span class="sc">*</span>rho)))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (x <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> y <span class="sc">==</span> <span class="dv">1</span>){<span class="fu">return</span>(<span class="sc">-</span><span class="dv">1</span><span class="sc">/</span>(<span class="dv">1</span> <span class="sc">-</span> rho))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {<span class="fu">return</span>(<span class="dv">0</span>)}</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>So we then have:</p>
+<p><span class="math display">\[
+\frac{\partial l}{\partial \rho}=\sum_{i=1}^{370}\frac{d}{d\rho}\ln{\tau(x_i,y_i,\lambda_i,\mu_i,\rho)}
+\]</span> <span class="math display">\[
+\frac{d}{d\rho}\ln{\tau(x,y,\lambda,\mu,\rho)=\begin{cases}  \frac{-\lambda\mu}{1-\lambda\mu\rho} &amp; \text{if } x=y=0,\\
+\frac{\lambda}{1+\lambda\rho} &amp; \text{if } x=0,y=1,\\
+\frac{\mu}{1+\mu\rho} &amp; \text{if } x=1,y=0,\\
+\frac{-1}{1-\rho} &amp; \text{if } x=y=1,\\
+0 &amp; \text{otherwise}
+\end{cases}}
+\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>gradRho<span class="ot">&lt;-</span><span class="cf">function</span>(rho){</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>(<span class="fu">dtau</span>(dfnew<span class="sc">$</span>FTHG,dfnew<span class="sc">$</span>FTAG,home_exp,away_exp,rho))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>We then use gradient ascent. We define rho and start at an initial value. We pick a step-size. Once our condition is met we then retrieve our Rho parameter.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>rho <span class="ot">&lt;-</span> <span class="fl">0.1</span>      <span class="co"># starting value</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>stepsize <span class="ot">&lt;-</span> <span class="fl">0.001</span>    <span class="co"># step size</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10000</span>){</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  step <span class="ot">&lt;-</span> stepsize <span class="sc">*</span> <span class="fu">gradRho</span>(rho)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> rho <span class="sc">+</span> step</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">abs</span>(step) <span class="sc">&lt;</span> <span class="fl">1e-8</span>) <span class="cf">break</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>RHO<span class="ot">&lt;-</span>rho</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>RHO</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -0.0104832</code></pre>
+</div>
+</div>
+<p>Let’s test the 10 matches we excluded.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>test<span class="ot">&lt;-</span>df[<span class="dv">371</span><span class="sc">:</span><span class="dv">380</span>,<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>]</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>testhome<span class="ot">&lt;-</span>test<span class="sc">$</span>HomeTeam</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>testaway<span class="ot">&lt;-</span>test<span class="sc">$</span>AwayTeam</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>lambda <span class="ot">&lt;-</span> <span class="fu">predict</span>(pois.mod, <span class="fu">data.frame</span>(<span class="at">Home=</span><span class="dv">1</span>, <span class="at">Team=</span>testhome, <span class="at">Opponent=</span>testaway), <span class="at">type=</span><span class="st">'response'</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">predict</span>(pois.mod,<span class="fu">data.frame</span>(<span class="at">Home=</span><span class="dv">0</span>,<span class="at">Team=</span>testaway,<span class="at">Opponent=</span>testhome),<span class="at">type=</span><span class="st">'response'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>By summing up the diagonal entries of the Probability Matrix we can check the Probability of a draw. To find the probability of the home team winning, sum up the lower triangle. For the away team, sum up the upper triangle. We will create a table and do this for each match. Where we will show the probability of the home team winning, away team winning, or a draw.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>maxgoal <span class="ot">&lt;-</span> <span class="dv">8</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>resultsbasic<span class="ot">&lt;-</span><span class="fu">data.frame</span>(<span class="at">Home =</span> testhome, <span class="at">Away =</span> testaway,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">HomeWin =</span> <span class="cn">NA</span>, <span class="at">Draw =</span> <span class="cn">NA</span>, <span class="at">AwayWin =</span> <span class="cn">NA</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>resultsdc <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Home =</span> testhome, <span class="at">Away =</span> testaway,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">HomeWin =</span> <span class="cn">NA</span>, <span class="at">Draw =</span> <span class="cn">NA</span>, <span class="at">AwayWin =</span> <span class="cn">NA</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) {</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  pm <span class="ot">&lt;-</span> <span class="fu">dpois</span>(<span class="dv">0</span><span class="sc">:</span>maxgoal, lambda[i]) <span class="sc">%*%</span> <span class="fu">t</span>(<span class="fu">dpois</span>(<span class="dv">0</span><span class="sc">:</span>maxgoal, mu[i]))</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  resultsbasic<span class="sc">$</span>HomeWin[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(pm[<span class="fu">lower.tri</span>(pm)])</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  resultsbasic<span class="sc">$</span>Draw[i]    <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">diag</span>(pm))</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  resultsbasic<span class="sc">$</span>AwayWin[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(pm[<span class="fu">upper.tri</span>(pm)])</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>) {</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  pm <span class="ot">&lt;-</span> <span class="fu">dpois</span>(<span class="dv">0</span><span class="sc">:</span>maxgoal, lambda[i]) <span class="sc">%*%</span> <span class="fu">t</span>(<span class="fu">dpois</span>(<span class="dv">0</span><span class="sc">:</span>maxgoal, mu[i]))</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  pm[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>] <span class="ot">&lt;-</span> pm[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>] <span class="sc">*</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">tau</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">1</span>), <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>), lambda[i], mu[i], RHO), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  resultsdc<span class="sc">$</span>HomeWin[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(pm[<span class="fu">lower.tri</span>(pm)])</span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  resultsdc<span class="sc">$</span>Draw[i]    <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">diag</span>(pm))</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  resultsdc<span class="sc">$</span>AwayWin[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(pm[<span class="fu">upper.tri</span>(pm)])</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>resultsbasic</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Home       Away   HomeWin      Draw    AwayWin
+1       Alaves  Vallecano 0.4082611 0.2972193 0.29451516
+2        Betis    Levante 0.6379039 0.1974447 0.16424374
+3        Celta    Sevilla 0.5943181 0.2155621 0.18991210
+4      Espanol   Sociedad 0.4240554 0.2385609 0.33731053
+5       Getafe    Osasuna 0.3860542 0.3411624 0.27278255
+6       Girona      Elche 0.4105775 0.2669494 0.32245633
+7     Mallorca     Oviedo 0.5918514 0.2512585 0.15685038
+8  Real Madrid Ath Bilbao 0.7805922 0.1454003 0.07289599
+9     Valencia  Barcelona 0.1393376 0.1824351 0.67758818
+10  Villarreal Ath Madrid 0.4745266 0.2393795 0.28601888</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>resultsdc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Home       Away   HomeWin      Draw    AwayWin
+1       Alaves  Vallecano 0.4068615 0.3000185 0.29311557
+2        Betis    Levante 0.6369410 0.1993705 0.16328085
+3        Celta    Sevilla 0.5932544 0.2176896 0.18884837
+4      Espanol   Sociedad 0.4229136 0.2408444 0.33616878
+5       Getafe    Osasuna 0.3846975 0.3438760 0.27142577
+6       Girona      Elche 0.4092476 0.2696093 0.32112638
+7     Mallorca     Oviedo 0.5906796 0.2536021 0.15567856
+8  Real Madrid Ath Bilbao 0.7798683 0.1468480 0.07217216
+9     Valencia  Barcelona 0.1384491 0.1842122 0.67669962
+10  Villarreal Ath Madrid 0.4733570 0.2417188 0.28484923</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>Winner<span class="ot">&lt;-</span>df[<span class="dv">371</span><span class="sc">:</span><span class="dv">380</span>,<span class="dv">6</span>]</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind.data.frame</span>(resultsbasic,Winner)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Home       Away   HomeWin      Draw    AwayWin Winner
+1       Alaves  Vallecano 0.4082611 0.2972193 0.29451516      A
+2        Betis    Levante 0.6379039 0.1974447 0.16424374      H
+3        Celta    Sevilla 0.5943181 0.2155621 0.18991210      H
+4      Espanol   Sociedad 0.4240554 0.2385609 0.33731053      D
+5       Getafe    Osasuna 0.3860542 0.3411624 0.27278255      H
+6       Girona      Elche 0.4105775 0.2669494 0.32245633      D
+7     Mallorca     Oviedo 0.5918514 0.2512585 0.15685038      H
+8  Real Madrid Ath Bilbao 0.7805922 0.1454003 0.07289599      H
+9     Valencia  Barcelona 0.1393376 0.1824351 0.67758818      H
+10  Villarreal Ath Madrid 0.4745266 0.2393795 0.28601888      H</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cbind.data.frame</span>(resultsdc,Winner)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          Home       Away   HomeWin      Draw    AwayWin Winner
+1       Alaves  Vallecano 0.4068615 0.3000185 0.29311557      A
+2        Betis    Levante 0.6369410 0.1993705 0.16328085      H
+3        Celta    Sevilla 0.5932544 0.2176896 0.18884837      H
+4      Espanol   Sociedad 0.4229136 0.2408444 0.33616878      D
+5       Getafe    Osasuna 0.3846975 0.3438760 0.27142577      H
+6       Girona      Elche 0.4092476 0.2696093 0.32112638      D
+7     Mallorca     Oviedo 0.5906796 0.2536021 0.15567856      H
+8  Real Madrid Ath Bilbao 0.7798683 0.1468480 0.07217216      H
+9     Valencia  Barcelona 0.1384491 0.1842122 0.67669962      H
+10  Villarreal Ath Madrid 0.4733570 0.2417188 0.28484923      H</code></pre>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
